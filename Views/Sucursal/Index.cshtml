@@ -1,0 +1,270 @@
+﻿@{
+    ViewBag.Title = "Mantenimiento de Sucursal";
+    ViewBag.PageTitle = "Mantenimiento de Sucursal";
+}
+
+<input type="hidden" id="idBanco" />
+<input type="hidden" id="idSucursal" />
+
+<br />
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h3 class="panel-title">Lista</h3>
+            </div>
+            <div class="panel-body">
+                <div class="input-group">
+                    <input class="form-control" placeholder="Buscar Sucursal" id="txtBusqueda">
+                    <span class="input-group-btn">
+                        <button id="btnBusqueda" class="btn btn-default" type="button"><span class="glyphicon glyphicon-search"></span></button>
+                    </span>
+                </div>
+
+                <br />
+
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>
+                                Banco
+                            </th>
+                            <th>
+                                Sucursal
+                            </th>
+                            <th>
+                                Dirección
+                            </th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="tblBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h3 class="panel-title">Mantenimiento</h3>
+            </div>
+            <div class="panel-body">
+                <div id="dviMensaje"></div>
+
+                <label>Banco</label>
+                <div class="input-group">
+                    <input class="form-control" placeholder="Buscar Banco" id="txtBusquedaBanco" readonly>
+                    <span class="input-group-btn">
+                        <button id="btnBusquedaBanco" class="btn btn-default" type="button">
+                            <span class="glyphicon glyphicon-search"></span>
+                        </button>
+                    </span>
+                </div>
+
+                <br />
+
+                <div class="form-group">
+                    <label>Descripción</label>
+                    <input type="text" id="txtDescripcion" class="form-control input-sm">
+                </div>
+
+                <div class="form-group">
+                    <label>Dirección</label>
+                    <input type="text" id="txtDireccion" class="form-control input-sm">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="mdlBancos" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title" id="myModalLabel">Lista de Bancos</h4>
+            </div>
+            <div class="modal-body">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>
+                                Banco
+                            </th>                            
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="tblBodyMdl"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section JS {
+    <script>
+        var nEntidad = {
+            onInit: function () {
+                nEntidad.Nuevo();
+                nEntidad.ListarSucursales();
+            },
+            OkMensaje: function (msg) {
+                var div = '<div class="alert alert-success" role="alert">' + msg + '</div>'
+                $('#dviMensaje').html(div);
+                setTimeout("$('#dviMensaje').html('')", 3000);
+            },
+            ErrorMensaje: function (msg) {
+                var div = '<div class="alert alert-danger" role="alert">' + msg + '</div>'
+                $('#dviMensaje').html(div);
+                setTimeout("$('#dviMensaje').html('')", 3000);
+            },
+            Ajax: function (url, tipo, parametro, callbackOk) {
+                $.ajax({
+                    url: url,
+                    data: parametro,
+                    type: tipo,
+                    dataType: 'json',
+                    success: callbackOk,
+                    error: function (xhr) { console.log(xhr); },
+                    cache: false
+                });
+            },
+            Nuevo: function () {
+                $('#idBanco').val('');
+                $('#idSucursal').val('');
+                $('#txtBusqueda').val('');
+                $('#txtBusquedaBanco').val('');                
+                $('#txtDescripcion').val('');
+                $('#txtDireccion').val('');
+                $('#btnBusquedaBanco').removeAttr('disabled');
+                nEntidad.ListarSucursales();
+                return true;
+            },
+            Grabar: function () {
+                if ($('#idBanco').val() == "") {
+                    nEntidad.ErrorMensaje('Debe Seleccionar un Banco. Verificar!!!');
+                    return;
+                }
+
+                if ($('#txtDescripcion').val() == "") {
+                    nEntidad.ErrorMensaje('Debe Ingresar la Descripción. Verificar!!!');
+                    return;
+                }
+
+                if (confirm("¿Desea Guardar El Registro?")) {
+                    
+                    var parametro = {
+                        sAccion: $('#idSucursal').val() == '' ? 'INS' : 'UPD',
+                        idBanco: $('#idBanco').val(),
+                        idSucursal: $('#idSucursal').val() == '' ? 0 : $('#idSucursal').val(),
+                        NombreSucursal: $('#txtDescripcion').val(),
+                        Direccion: $('#txtDireccion').val()
+                    }
+                    nEntidad.Ajax('/Sucursal/MantSucursal', 'post', parametro, nEntidad.cbGrabar);
+                }
+            },
+            Editar: function (obj) {
+                var $tr = $(obj).parent().parent()
+                $('#idBanco').val($tr[0].id.split('-')[0]);
+                $('#idSucursal').val($tr[0].id.split('-')[1]);                
+                $('#txtBusquedaBanco').val($tr[0].cells[0].innerHTML);
+                $('#txtDescripcion').val($tr[0].cells[1].innerHTML);
+                $('#txtDireccion').val($tr[0].cells[2].innerHTML);
+                $('#btnBusquedaBanco').attr('disabled', 'disabled');
+            },
+            SeleccionarReg: function (obj) {
+                var tr = $(obj).parent().parent();
+                $('#idBanco').val(tr[0].id);
+                $('#txtBusquedaBanco').val(tr[0].cells[0].innerHTML);
+                $('#mdlBancos').modal('hide');
+            },
+            EliminarReg: function (id) {
+                if (confirm("¿Desea Eliminar el Registro?")) {
+                    var parametro = {
+                        sAccion: 'DEL',
+                        idBanco: id
+                    }
+                    nEntidad.Ajax('/Banco/MantSucursal', 'post', parametro, nEntidad.cbGrabar);
+                }
+            },
+            ListarBancos: function () {                
+                var parametro = { filtro: $('#txtBusquedaBanco').val() };
+                nEntidad.Ajax('/Banco/ObtenerBancos', 'get', parametro, nEntidad.cbListarBancos);
+            },
+            cbListarBancos: function (data) {
+                var lst = data.lista;
+                if (lst != null) {
+                    if (lst.length > 0) {
+                        var tr = '';
+                        for (var i = 0; i < lst.length; i++) {
+                            var item = lst[i];
+                            tr += '<tr id="' + item.idBanco + '">';
+                            tr += '<td>' + item.Nombre + '</td>';                            
+                            tr += '<td style="text-align:center;">';                            
+                            tr += '<span class="glyphicon glyphicon-ok" onclick="nEntidad.SeleccionarReg(this);" title="Seleccionar" style="cursor:pointer;margin-left:10px;"></span>';
+                            tr += '</td>';
+                            tr += '<tr>';
+                        }
+                        $('#tblBodyMdl').html(tr);
+                    } else {
+                        $('#tblBodyMdl').html('<tr><td colspan="2">NO HAY REGISTROS A MOSTRAR...</td></tr>');
+                    }
+                } else {
+                    $('#tblBodyMdl').html('<tr><td colspan="2">NO HAY REGISTROS A MOSTRAR...</td></tr>');
+                }
+
+                $('#mdlBancos').modal('show');
+            },
+            ListarSucursales: function () {
+                var parametro = { filtro: $('#txtBusqueda').val() };
+                nEntidad.Ajax('/Sucursal/ObtenerSucursales', 'get', parametro, nEntidad.cbListarSucursales);
+            },
+            cbListarSucursales: function (data) {
+                var lst = data.lista;
+                if (lst != null) {
+                    if (lst.length > 0) {
+                        var tr = '';
+                        for (var i = 0; i < lst.length; i++) {
+                            var item = lst[i];
+                            tr += '<tr id="' + item.idBanco + '-' + item.idSucursal + '">';
+                            tr += '<td>' + item.NombreBanco + '</td>';
+                            tr += '<td>' + item.NombreSucursal + '</td>';
+                            tr += '<td>' + item.Direccion + '</td>';
+                            tr += '<td style="text-align:center;">';
+                            tr += '<span class="glyphicon glyphicon-edit" onclick="nEntidad.Editar(this);" title="Editar" style="cursor:pointer;"></span>';
+                            tr += '<span class="glyphicon glyphicon-trash" onclick="nEntidad.EliminarReg(' + item.idBanco + '-' + item.idSucursal + ');" title="Eliminar" style="cursor:pointer;margin-left:10px;"></span>';
+                            tr += '</td>';
+                            tr += '<tr>';
+                        }
+                        $('#tblBody').html(tr);
+                    } else {
+                        $('#tblBody').html('<tr><td colspan="4">NO HAY REGISTROS A MOSTRAR...</td></tr>');
+                    }
+                } else {
+                    $('#tblBody').html('<tr><td colspan="4">NO HAY REGISTROS A MOSTRAR...</td></tr>');
+                }
+            },
+            cbGrabar: function (data) {
+                if (data.resultado) {
+                    nEntidad.OkMensaje('Grabado Correctamente.');
+                    nEntidad.Nuevo();
+                    nEntidad.ListarSucursales();
+                } else {
+                    nEntidad.ErrorMensaje(data.mensaje)
+                    $('#txtDescripcion').select();
+                }
+            }
+        };
+
+        $(document).ready(nEntidad.onInit);
+
+        $('#hrefNuevo').on('click', nEntidad.Nuevo);
+        $('#hrefGuardar').on('click', nEntidad.Grabar);
+        $('#btnBusqueda').on('click', nEntidad.ListarSucursales);
+        $('#btnBusquedaBanco').on('click', nEntidad.ListarBancos);
+    </script>
+}

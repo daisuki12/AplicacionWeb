@@ -1,0 +1,173 @@
+﻿@{
+    ViewBag.Title = "Consulta WCF";
+    ViewBag.PageTitle = "Consulta WCF";
+}
+
+<input type="hidden" id="idBanco" />
+
+<br />
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h3 class="panel-title">Lista</h3>
+            </div>
+            <div class="panel-body">
+                <label>Banco</label>
+                <div class="input-group">
+                    <input class="form-control" placeholder="Buscar Banco" id="txtBusqueda">
+                    <span class="input-group-btn">
+                        <button id="btnBusqueda" class="btn btn-default" type="button"><span class="glyphicon glyphicon-search"></span></button>
+                    </span>
+                </div>
+
+                <br />
+
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>
+                                Sucursal
+                            </th>
+                            <th>
+                                Dirección
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody id="tblBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="mdlBancos" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title" id="myModalLabel">Lista de Bancos</h4>
+            </div>
+            <div class="modal-body">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>
+                                Banco
+                            </th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="tblBodyMdl"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section JS {
+    <script>
+        var nEntidad = {
+            onInit: function () {
+                $('#hrefGuardar').hide();
+                nEntidad.Nuevo();                
+            },
+            OkMensaje: function (msg) {
+                var div = '<div class="alert alert-success" role="alert">' + msg + '</div>'
+                $('#dviMensaje').html(div);
+                setTimeout("$('#dviMensaje').html('')", 3000);
+            },
+            ErrorMensaje: function (msg) {
+                var div = '<div class="alert alert-danger" role="alert">' + msg + '</div>'
+                $('#dviMensaje').html(div);
+                setTimeout("$('#dviMensaje').html('')", 3000);
+            },
+            Ajax: function (url, tipo, parametro, callbackOk) {
+                $.ajax({
+                    url: url,
+                    data: parametro,
+                    type: tipo,
+                    dataType: 'json',
+                    success: callbackOk,
+                    error: function (xhr) { console.log(xhr); },
+                    cache: false
+                });
+            },
+            Nuevo: function () {
+                $('#idBanco').val('');
+                $('#txtBusqueda').val('');
+                $('#txtDescripcion').val('');
+                $('#txtDireccion').val('');
+                $('#tblBody').html('<tr><td colspan="3">NO HAY REGISTROS A MOSTRAR...</td></tr>');
+                return true;
+            },            
+            Listar: function () {
+                var parametro = { idBanco: $('#idBanco').val() };
+                nEntidad.Ajax('/Consulta/ConsultaWfc', 'get', parametro, nEntidad.cbListar);
+            },
+            cbListar: function (data) {
+                var lst = data.lst;
+                if (lst != null) {
+                    if (lst.length > 0) {
+                        var tr = '';
+                        for (var i = 0; i < lst.length; i++) {
+                            var item = lst[i];
+                            tr += '<tr id="' + item.idSucursal + '">';
+                            tr += '<td>' + item.NombreSucursal + '</td>';
+                            tr += '<td>' + item.Direccion + '</td>';
+                            tr += '<tr>';
+                        }
+                        $('#tblBody').html(tr);
+                    } else {
+                        $('#tblBody').html('<tr><td colspan="3">NO HAY REGISTROS A MOSTRAR...</td></tr>');
+                    }
+                } else {
+                    $('#tblBody').html('<tr><td colspan="3">NO HAY REGISTROS A MOSTRAR...</td></tr>');
+                }
+            },
+            SeleccionarReg: function (obj) {
+                var tr = $(obj).parent().parent();
+                $('#idBanco').val(tr[0].id);
+                $('#txtBusqueda').val(tr[0].cells[0].innerHTML);
+                $('#mdlBancos').modal('hide');
+                nEntidad.Listar();
+            },
+            ListarBancos: function () {
+                var parametro = { filtro: $('#txtBusquedaBanco').val() };
+                nEntidad.Ajax('/Banco/ObtenerBancos', 'get', parametro, nEntidad.cbListarBancos);
+            },
+            cbListarBancos: function (data) {
+                var lst = data.lista;
+                if (lst != null) {
+                    if (lst.length > 0) {
+                        var tr = '';
+                        for (var i = 0; i < lst.length; i++) {
+                            var item = lst[i];
+                            tr += '<tr id="' + item.idBanco + '">';
+                            tr += '<td>' + item.Nombre + '</td>';
+                            tr += '<td style="text-align:center;">';
+                            tr += '<span class="glyphicon glyphicon-ok" onclick="nEntidad.SeleccionarReg(this);" title="Seleccionar" style="cursor:pointer;margin-left:10px;"></span>';
+                            tr += '</td>';
+                            tr += '<tr>';
+                        }
+                        $('#tblBodyMdl').html(tr);
+                    } else {
+                        $('#tblBodyMdl').html('<tr><td colspan="2">NO HAY REGISTROS A MOSTRAR...</td></tr>');
+                    }
+                } else {
+                    $('#tblBodyMdl').html('<tr><td colspan="2">NO HAY REGISTROS A MOSTRAR...</td></tr>');
+                }
+
+                $('#mdlBancos').modal('show');
+            },
+        };
+
+        $(document).ready(nEntidad.onInit);
+
+        $('#hrefNuevo').on('click', nEntidad.Nuevo);
+        $('#btnBusqueda').on('click', nEntidad.ListarBancos);
+    </script>
+}

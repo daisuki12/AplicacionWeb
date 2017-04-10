@@ -1,0 +1,69 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewBag.Title</title>
+    <style>
+        body {
+            padding-top: 50px;
+            padding-bottom: 20px;
+        }
+    </style>
+    <link href="~/Content/bootstrap.min.css" rel="stylesheet" />
+    @Scripts.Render("~/bundles/modernizr")
+</head>
+<body>
+    <div class="navbar navbar-inverse navbar-fixed-top">
+        <div class="container">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+            </div>
+            <div class="navbar-collapse collapse">
+                <ul class="nav navbar-nav">
+                    <li>@Html.ActionLink("Banco", "Index", "Banco")</li>
+                    <li>@Html.ActionLink("Sucursal", "Index", "Sucursal")</li>
+                    <li>@Html.ActionLink("Orden Pago", "Index", "OrdenPago")</li>
+                    <li>@Html.ActionLink("Consulta Json", "Consulta1", "Consulta")</li>
+                    <li>@Html.ActionLink("Consulta WCF", "Consulta2", "Consulta")</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="container bs-docs-container">
+        <div class="row">
+            <div class="col-xs-12">
+                <h3>@ViewBag.PageTitle</h3>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-xs-12">
+                <a href="javascript:void(0)" id="hrefNuevo" class="btn btn-info tooltip-info btn-sm btn-round" data-rel="tooltip" data-placement="bottom" title="Nuevo"><i class="ace-icon glyphicon glyphicon-plus bigger-110 icon-only"></i></a>
+
+                <a href="javascript:void(0)" id="hrefGuardar" class="btn btn-success tooltip-info btn-sm btn-round" data-rel="tooltip" data-placement="bottom" title="Guardar"><i class="ace-icon glyphicon glyphicon-floppy-disk bigger-110 icon-only"></i></a>
+            </div>
+        </div>
+                
+        <div class="row">
+            <div class="col-xs-12">
+                @RenderBody()
+            </div>
+        </div>
+    </div>
+
+    @Scripts.Render("~/bundles/jquery")
+    @Scripts.Render("~/bundles/bootstrap")
+    @RenderSection("scripts", required: false)
+    <script src="~/Scripts/jquery.maskedinput.js"></script>
+    @if (IsSectionDefined("JS"))
+    {
+        @RenderSection("JS");
+    }
+</body>
+</html>

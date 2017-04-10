@@ -1,0 +1,434 @@
+﻿@{
+    ViewBag.Title = "Orden Pago";
+    ViewBag.PageTitle = "Orden de Pago";
+}
+
+<input type="hidden" id="idBanco" />
+<input type="hidden" id="idSucursal" />
+<input type="hidden" id="idOrdenPago" />
+
+<br />
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h3 class="panel-title">Lista</h3>
+            </div>
+            <div class="panel-body">
+                <div class="input-group">
+                    <input class="form-control" placeholder="Buscar Orden" id="txtBusqueda">
+                    <span class="input-group-btn">
+                        <button id="btnBusqueda" class="btn btn-default" type="button"><span class="glyphicon glyphicon-search"></span></button>
+                    </span>
+                </div>
+
+                <br />
+
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>
+                                Orden
+                            </th>
+                            <th>
+                                Monto
+                            </th>
+                            <th>
+                                Moneda
+                            </th>
+                            <th>
+                                Fecha de Pago
+                            </th>
+                            <th>
+                                Estado
+                            </th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="tblBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h3 class="panel-title">Mantenimiento</h3>
+            </div>
+            <div class="panel-body">
+                <div id="dviMensaje"></div>
+
+                <label>Banco</label>
+                <div class="input-group">
+                    <input class="form-control" placeholder="Buscar Banco" id="txtBusquedaBanco" readonly>
+                    <span class="input-group-btn">
+                        <button id="btnBusquedaBanco" class="btn btn-default" type="button">
+                            <span class="glyphicon glyphicon-search"></span>
+                        </button>
+                    </span>
+                </div>
+
+                <br />
+
+                <label>Sucursal</label>
+                <div class="input-group">
+                    <input class="form-control" placeholder="Buscar Sucursal" id="txtBusquedaSucursal" readonly>
+                    <span class="input-group-btn">
+                        <button id="btnBusquedaSucursal" class="btn btn-default" type="button">
+                            <span class="glyphicon glyphicon-search"></span>
+                        </button>
+                    </span>
+                </div>
+
+                <br />
+
+                <div class="form-group">
+                    <label>Monto</label>
+                    <input type="text" id="txtMonto" class="form-control input-sm">
+                </div>
+
+                <div class="form-group">
+                    <label>Moneda</label>
+                    <select id="cboMoneda" class="form-control input-sm">
+                        <option value="-1">Seleccione Moneda</option>
+                        <option value="1">Soles</option>
+                        <option value="2">Dolares</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Estado</label>
+                    <select id="cboEstado" class="form-control input-sm">
+                        <option value="-1">Seleccione Estado</option>
+                        <option value="1">Pagada</option>
+                        <option value="2">Declinada</option>
+                        <option value="3">Fallida</option>
+                        <option value="4">Anulada</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Fecha Pago</label>
+                    <input type="text" id="txtFecha" class="form-control input-sm">                    
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="mdlBancos" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title" id="myModalLabel">Lista de Bancos</h4>
+            </div>
+            <div class="modal-body">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>
+                                Banco
+                            </th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="tblBodyBan"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="mdlSucursal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title" id="myModalLabel">Lista de Sucursales</h4>
+            </div>
+            <div class="modal-body">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>
+                                Sucursal
+                            </th>
+                            <th>
+                                Dirección
+                            </th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="tblBodySuc"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section JS {
+    <script>
+        var nEntidad = {
+            onInit: function () {
+                nEntidad.Nuevo();
+                nEntidad.ListaOrdenes();
+            },
+            OkMensaje: function (msg) {
+                var div = '<div class="alert alert-success" role="alert">' + msg + '</div>'
+                $('#dviMensaje').html(div);
+                setTimeout("$('#dviMensaje').html('')", 3000);
+            },
+            ErrorMensaje: function (msg) {
+                var div = '<div class="alert alert-danger" role="alert">' + msg + '</div>'
+                $('#dviMensaje').html(div);
+                setTimeout("$('#dviMensaje').html('')", 3000);
+            },
+            Ajax: function (url, tipo, parametro, callbackOk) {
+                $.ajax({
+                    url: url,
+                    data: parametro,
+                    type: tipo,
+                    dataType: 'json',
+                    success: callbackOk,
+                    error: function (xhr) { console.log(xhr); },
+                    cache: false
+                });
+            },
+            Nuevo: function () {
+                $('#idBanco').val('');
+                $('#idSucursal').val('');
+                $('#idOrdenPago').val('');
+                $('#txtBusqueda').val('');
+                $('#txtBusquedaBanco').val('');
+                $('#txtBusquedaSucursal').val('');
+                $('#cboEstado').val('-1');
+                $('#cboMoneda').val('-1');
+                $('#txtMonto').val('');
+                $('#txtFecha').val('');
+                $('#btnBusquedaBanco').removeAttr('disabled');
+                $('#btnBusquedaSucursal').removeAttr('disabled');
+                nEntidad.ListaOrdenes();
+                return true;
+            },
+            Grabar: function () {
+                if ($('#idBanco').val() == "") {
+                    nEntidad.ErrorMensaje('Debe Seleccionar un Banco. Verificar!!!');
+                    return;
+                }
+
+                if ($('#idSucursal').val() == "") {
+                    nEntidad.ErrorMensaje('Debe Seleccionar una Sucursal. Verificar!!!');
+                    return;
+                }
+
+                if ($('#txtMonto').val() == "") {
+                    nEntidad.ErrorMensaje('Debe Ingresar el Monto. Verificar!!!');
+                    return;
+                }
+
+                if ($('#txtMonto').val() == 0) {
+                    nEntidad.ErrorMensaje('Debe Ingresar un Monto mayor a 0. Verificar!!!');
+                    return;
+                }
+
+                if ($('#cboMoneda').val() == "-1") {
+                    nEntidad.ErrorMensaje('Debe Seleccionar una Moneda. Verificar!!!');
+                    return;
+                }
+
+                if ($('#cboEstado').val() == "-1") {
+                    nEntidad.ErrorMensaje('Debe Seleccionar un Estado. Verificar!!!');
+                    return;
+                }
+
+                if (confirm("¿Desea Guardar El Registro?")) {
+                    var parametro = {
+                        sAccion: $('#idOrdenPago').val() == '' ? 'INS' : 'UPD',
+                        idBanco: $('#idBanco').val(),
+                        idSucursal: $('#idSucursal').val(),
+                        idOrdenPago: $('#idOrdenPago').val() == '' ? 0 : $('#idOrdenPago').val(),
+                        monto: $('#txtMonto').val(),
+                        estado: $('#cboEstado').val(),
+                        moneda: $('#cboMoneda').val(),
+                        fecPago: $('#txtFecha').val()
+                    }
+
+                    nEntidad.Ajax('/OrdenPago/MantOrden', 'post', parametro, nEntidad.cbGrabar);
+                }
+            },
+            Editar: function (obj) {
+                var $tr = $(obj).parent().parent()
+                $('#idBanco').val($tr[0].id.split('-')[0]);
+                $('#idSucursal').val($tr[0].id.split('-')[1]);
+                $('#idOrdenPago').val($tr[0].id.split('-')[2]);
+                $('#txtBusquedaBanco').val($tr[0].cells[1].innerHTML);
+                $('#txtBusquedaSucursal').val($tr[0].cells[2].innerHTML);
+                $('#txtMonto').val($tr[0].cells[3].innerHTML);
+                $('#cboMoneda').val($tr[0].cells[4].id);
+                $('#txtFecha').val($tr[0].cells[5].innerHTML);
+                $('#cboEstado').val($tr[0].cells[6].id);
+                $('#btnBusquedaBanco').attr('disabled', 'disabled');
+                $('#btnBusquedaSucursal').attr('disabled', 'disabled');
+            },
+            SeleccionarBan: function (obj) {
+                var tr = $(obj).parent().parent();
+                $('#idBanco').val(tr[0].id);
+                $('#txtBusquedaBanco').val(tr[0].cells[0].innerHTML);
+                $('#mdlBancos').modal('hide');
+            },
+            SeleccionarSuc: function (obj) {
+                var tr = $(obj).parent().parent();
+                $('#idSucursal').val(tr[0].id);
+                $('#txtBusquedaSucursal').val(tr[0].cells[0].innerHTML);
+                $('#mdlSucursal').modal('hide');
+            },
+            EliminarReg: function (id) {
+                if (confirm("¿Desea Eliminar el Registro?")) {
+                    var parametro = {
+                        sAccion: 'DEL',
+                        idOrdenPago: id
+                    }
+                    nEntidad.Ajax('/OrdenPago/MantOrden', 'post', parametro, nEntidad.cbGrabar);
+                }
+            },
+            ListaOrdenes: function () {
+                var parametro = { filtro: $('#txtBusqueda').val() };
+                nEntidad.Ajax('/OrdenPago/ObtenerOrdenes', 'get', parametro, nEntidad.cbListarOrdenes);
+            },
+            textoCombo: function (idCbo, valor) {
+                var array = $('#' + idCbo + ' option');
+                for (var i = 0; i < array.length; i++) {
+                    var item = array[i];
+                    if (item.value == valor) {
+                        return item.innerHTML;
+                    }
+                }
+            },
+            cbListarOrdenes: function (data) {
+                var lst = data.lista;
+                if (lst != null) {
+                    if (lst.length > 0) {
+                        var tr = '';
+                        for (var i = 0; i < lst.length; i++) {
+                            var item = lst[i];
+                            tr += '<tr id="' + item.idBanco + '-' + item.idSucursal + '-' + item.idOrdenPago + '">';
+                            tr += '<td>' + item.idOrdenPago + '</td>';
+                            tr += '<td style="display:none;">' + item.nomBanco + '</td>';
+                            tr += '<td style="display:none;">' + item.nomSucursal + '</td>';
+                            tr += '<td>' + item.monto + '</td>';
+                            tr += '<td id=' + item.moneda + '>' + nEntidad.textoCombo('cboMoneda', item.moneda) + '</td>';
+                            tr += '<td>' + item.fecPago + '</td>';
+                            tr += '<td id=' + item.estado + '>' + nEntidad.textoCombo('cboEstado', item.estado) + '</td>';
+                            tr += '<td style="text-align:center;">';
+                            tr += '<span class="glyphicon glyphicon-edit" onclick="nEntidad.Editar(this);" title="Editar" style="cursor:pointer;"></span>';
+                            tr += '<span class="glyphicon glyphicon-trash" onclick="nEntidad.EliminarReg(' + item.idOrdenPago + ');" title="Eliminar" style="cursor:pointer;margin-left:10px;"></span>';
+                            tr += '</td>';
+                            tr += '<tr>';
+                        }
+                        $('#tblBody').html(tr);
+                    } else {
+                        $('#tblBody').html('<tr><td colspan="6">NO HAY REGISTROS A MOSTRAR...</td></tr>');
+                    }
+                } else {
+                    $('#tblBody').html('<tr><td colspan="6">NO HAY REGISTROS A MOSTRAR...</td></tr>');
+                }
+            },
+            ListarBancos: function () {
+                var parametro = { filtro: '' };
+                nEntidad.Ajax('/Banco/ObtenerBancos', 'get', parametro, nEntidad.cbListarBancos);
+            },
+            cbListarBancos: function (data) {
+                var lst = data.lista;
+                if (lst != null) {
+                    if (lst.length > 0) {
+                        var tr = '';
+                        for (var i = 0; i < lst.length; i++) {
+                            var item = lst[i];
+                            tr += '<tr id="' + item.idBanco + '">';
+                            tr += '<td>' + item.Nombre + '</td>';
+                            tr += '<td style="text-align:center;">';
+                            tr += '<span class="glyphicon glyphicon-ok" onclick="nEntidad.SeleccionarBan(this);" title="Seleccionar" style="cursor:pointer;margin-left:10px;"></span>';
+                            tr += '</td>';
+                            tr += '<tr>';
+                        }
+                        $('#tblBodyBan').html(tr);
+                    } else {
+                        $('#tblBodyBan').html('<tr><td colspan="2">NO HAY REGISTROS A MOSTRAR...</td></tr>');
+                    }
+                } else {
+                    $('#tblBodyBan').html('<tr><td colspan="2">NO HAY REGISTROS A MOSTRAR...</td></tr>');
+                }
+
+                $('#mdlBancos').modal('show');
+            },
+            ListarSucursales: function () {
+                if ($('#idBanco').val() == "") {
+                    nEntidad.ErrorMensaje('Debe Seleccionar un Banco. Verificar!!!');
+                    return;
+                }
+
+                var parametro = { idBanco: $('#idBanco').val() };
+                nEntidad.Ajax('/Sucursal/ObtenerSucursalesBanco', 'get', parametro, nEntidad.cbListarSucursales);
+            },
+            cbListarSucursales: function (data) {
+                var lst = data.lista;
+                if (lst != null) {
+                    if (lst.length > 0) {
+                        var tr = '';
+                        for (var i = 0; i < lst.length; i++) {
+                            var item = lst[i];
+                            tr += '<tr id="' + item.idSucursal + '">';
+                            tr += '<td>' + item.NombreSucursal + '</td>';
+                            tr += '<td>' + item.Direccion + '</td>';
+                            tr += '<td style="text-align:center;">';
+                            tr += '<span class="glyphicon glyphicon-ok" onclick="nEntidad.SeleccionarSuc(this);" title="Selecionar" style="cursor:pointer;"></span>';
+                            tr += '</td>';
+                            tr += '<tr>';
+                        }
+                        $('#tblBodySuc').html(tr);
+                    } else {
+                        $('#tblBodySuc').html('<tr><td colspan="3">NO HAY REGISTROS A MOSTRAR...</td></tr>');
+                    }
+                } else {
+                    $('#tblBodySuc').html('<tr><td colspan="3">NO HAY REGISTROS A MOSTRAR...</td></tr>');
+                }
+
+                $('#mdlSucursal').modal('show');
+            },
+            cbGrabar: function (data) {
+                if (data.resultado) {
+                    nEntidad.OkMensaje('Grabado Correctamente.');
+                    nEntidad.Nuevo();
+                    nEntidad.ListaOrdenes();
+                } else {
+                    nEntidad.ErrorMensaje(data.mensaje)
+                    $('#txtDescripcion').select();
+                }
+            }
+        };
+
+        $(document).ready(nEntidad.onInit);
+
+        $('#hrefNuevo').on('click', nEntidad.Nuevo);
+        $('#hrefGuardar').on('click', nEntidad.Grabar);
+        $('#btnBusqueda').on('click', nEntidad.ListaOrdenes);
+        $('#btnBusquedaBanco').on('click', nEntidad.ListarBancos);
+        $('#btnBusquedaSucursal').on('click', nEntidad.ListarSucursales);
+        $('#txtMonto').on('keypress', function () {
+            var nPressKey = (event.keyCode ? event.keyCode : event.which);
+            
+            if (!(48 <= nPressKey && nPressKey <= 57) && nPressKey != 13 && nPressKey != 46) {
+                event.preventDefault();
+                return;
+            }
+        });
+        $("#txtFecha").mask("99/99/9999");
+    </script>
+}

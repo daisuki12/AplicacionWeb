@@ -1,0 +1,180 @@
+﻿@{
+    ViewBag.Title = "Mantenimiento de Banco";
+    ViewBag.PageTitle = "Mantenimiento de Banco";
+}
+
+<input type="hidden" id="idBanco" />
+
+<br />
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h3 class="panel-title">Lista</h3>
+            </div>
+            <div class="panel-body">
+                <div class="input-group">
+                    <input class="form-control" placeholder="Buscar Banco" id="txtBusqueda">
+                    <span class="input-group-btn">
+                        <button id="btnBusqueda" class="btn btn-default" type="button"><span class="glyphicon glyphicon-search"></span></button>
+                    </span>
+                </div>
+
+                <br />
+
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>
+                                Banco
+                            </th>
+                            <th>
+                                Dirección
+                            </th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="tblBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h3 class="panel-title">Mantenimiento</h3>
+            </div>
+            <div class="panel-body">
+                <div id="dviMensaje">
+
+                </div>
+
+                <div class="form-group">
+                    <label>Descripción</label>
+                    <input type="text" id="txtDescripcion" class="form-control input-sm">
+                </div>
+
+                <div class="form-group">
+                    <label>Dirección</label>
+                    <input type="text" id="txtDireccion" class="form-control input-sm">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section JS {
+    <script>
+        var nEntidad = {
+            onInit: function () {
+                nEntidad.Nuevo();
+                nEntidad.ListarBancos();
+            },
+            OkMensaje: function (msg) {
+                var div = '<div class="alert alert-success" role="alert">' + msg + '</div>'
+                $('#dviMensaje').html(div);
+                setTimeout("$('#dviMensaje').html('')", 3000);
+            },
+            ErrorMensaje: function (msg) {
+                var div = '<div class="alert alert-danger" role="alert">' + msg + '</div>'
+                $('#dviMensaje').html(div);
+                setTimeout("$('#dviMensaje').html('')", 3000);
+            },
+            Ajax: function (url, tipo, parametro, callbackOk) {
+                $.ajax({
+                    url: url,
+                    data: parametro,
+                    type: tipo,
+                    dataType: 'json',
+                    success: callbackOk,
+                    error: function (xhr) { console.log(xhr); },
+                    cache: false
+                });
+            },
+            Nuevo: function () {
+                $('#idBanco').val('');
+                $('#txtBusqueda').val('');
+                $('#txtDescripcion').val('');
+                $('#txtDireccion').val('');
+                nEntidad.ListarBancos();
+                return true;
+            },
+            Grabar: function () {
+                if ($('#txtDescripcion').val() == "") {
+                    nEntidad.ErrorMensaje('Debe Ingresar la Descripción. Verificar!!!');
+                    return;
+                }
+                if (confirm("¿Desea Guardar El Registro?")) {
+                    var parametro = {
+                        sAccion: $('#idBanco').val() == '' ? 'INS' : 'UPD',
+                        idBanco: $('#idBanco').val() == '' ? 0 : $('#idBanco').val(),
+                        Nombre: $('#txtDescripcion').val(),
+                        Direccion: $('#txtDireccion').val()
+                    }
+                    nEntidad.Ajax('/Banco/MantBanco', 'post', parametro, nEntidad.cbGrabar);
+                }
+            },
+            Editar: function (obj) {
+                var $tr = $(obj).parent().parent()
+                $('#idBanco').val($tr[0].id);
+                $('#txtDescripcion').val($tr[0].cells[0].innerHTML);
+                $('#txtDireccion').val($tr[0].cells[1].innerHTML);
+            },
+            EliminarReg: function (id) {
+                if (confirm("¿Desea Eliminar el Registro?")) {
+                    var parametro = {
+                        sAccion: 'DEL',
+                        idBanco: id
+                    }
+                    nEntidad.Ajax('/Banco/MantBanco', 'post', parametro, nEntidad.cbGrabar);
+                }
+            },
+            ListarBancos: function () {
+                var parametro = { filtro: $('#txtBusqueda').val() };
+                nEntidad.Ajax('/Banco/ObtenerBancos', 'get', parametro, nEntidad.cbListarBancos);
+            },
+            cbListarBancos: function (data) {
+                var lst = data.lista;
+                if (lst != null) {
+                    if (lst.length > 0) {
+                        var tr = '';
+                        for (var i = 0; i < lst.length; i++) {
+                            var item = lst[i];
+                            tr += '<tr id="' + item.idBanco + '">';
+                            tr += '<td>' + item.Nombre + '</td>';
+                            tr += '<td>' + item.Direccion + '</td>';
+                            tr += '<td style="text-align:center;">';
+                            tr += '<span class="glyphicon glyphicon-edit" onclick="nEntidad.Editar(this);" title="Editar" style="cursor:pointer;"></span>';
+                            tr += '<span class="glyphicon glyphicon-trash" onclick="nEntidad.EliminarReg(' + item.idBanco + ');" title="Eliminar" style="cursor:pointer;margin-left:10px;"></span>';
+                            tr += '</td>';
+                            tr += '<tr>';
+                        }
+                        $('#tblBody').html(tr);
+                    } else {
+                        $('#tblBody').html('<tr><td colspan="3">NO HAY REGISTROS A MOSTRAR...</td></tr>');
+                    }
+                } else {
+                    $('#tblBody').html('<tr><td colspan="3">NO HAY REGISTROS A MOSTRAR...</td></tr>');
+                }
+            },
+            cbGrabar: function (data) {
+                if (data.resultado) {
+                    nEntidad.OkMensaje('Grabado Correctamente.');
+                    nEntidad.Nuevo();
+                    nEntidad.ListarBancos();
+                } else {
+                    nEntidad.ErrorMensaje(data.mensaje)
+                    $('#txtDescripcion').select();
+                }
+            }
+        };
+
+        $(document).ready(nEntidad.onInit);
+
+        $('#hrefNuevo').on('click', nEntidad.Nuevo);
+        $('#hrefGuardar').on('click', nEntidad.Grabar);
+        $('#btnBusqueda').on('click', nEntidad.ListarBancos);
+    </script>
+}
